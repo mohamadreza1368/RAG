@@ -88,7 +88,7 @@ class SeoRuleClient:
             time.sleep(self.cfg.rate_limit_delay - elapsed)
         self._last_request_time = time.time()
 
-    def _request(self, method: str, endpoint: str, **kwargs) -> Any:
+    def _request(self, method: str, endpoint: str, return_response: bool = False, **kwargs) -> Any:
         url = f"{self.cfg.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         self._rate_limit()
 
@@ -100,11 +100,21 @@ class SeoRuleClient:
                     timeout=self.cfg.timeout,
                     **kwargs
                 )
+                
+                # بررسی سقف نرخ درخواست سرور
+                remaining = response.headers.get("X-Rate-Limit-Remaining")
+                if remaining is not None and remaining.isdigit() and int(remaining) <= 2:
+                    logger.warning(f"محدودیت نرخ سرور نزدیک است (باقیمانده: {remaining}). ایجاد وقفه کوتاه...")
+                    time.sleep(2.0)
+
                 if response.status_code == 200:
-                    return response.json()
+                    return response if return_response else response.json()
                 elif response.status_code == 404:
                     logger.warning(f"منبع یافت نشد (404): {url}")
                     return None
+                elif response.status_code == 429:
+                    logger.warning(f"محدودیت نرخ درخواست (429)! توقف موقت به مدت ۵ ثانیه...")
+                    time.sleep(5.0)
                 else:
                     logger.warning(f"خطای HTTP {response.status_code} در درخواست به {url} (تلاش {attempt})")
             except (requests.RequestException, Exception) as exc:
@@ -114,6 +124,7 @@ class SeoRuleClient:
                 time.sleep(self.cfg.retry_backoff_factor * attempt)
 
         raise RuntimeError(f"ارتباط با اندپوینت {url} پس از {self.cfg.max_retries} تلاش ناموفق بود.")
+
 
     # -------------------------------------------------------------
     # ۱. دسته‌بندی‌ها (Rule Categories)
@@ -155,6 +166,42 @@ class SeoRuleClient:
         if not data or not isinstance(data, list):
             return []
         return [RuleSummary(**item) for item in data]
+
+    def search_rules_with_pagination(
+        self,
+        category_id: Optional[int] = None,
+        page_number: int = 1,
+        page_size: int = 50,
+        sort: Optional[List[dict]] = None
+    ) -> tuple[List[RuleSummary], dict]:
+        """
+        جستجو همراه با متادیتای صفحه‌بندی هدر X-Pagination
+        """
+        payload: Dict[str, Any] = {
+            "PageNumber": page_number,
+            "PageSize": page_size,
+            "IsPartSearch": False,
+            "Sort": sort or [{"id": "Title", "desc": True}],
+        }
+        if category_id and category_id > 0:
+            payload["CategoryId"] = category_id
+
+        resp = self._request("POST", "Search/searchrule", json=payload, return_response=True)
+        if not resp or resp.status_code != 200:
+            return [], {}
+
+        pagination = {}
+        if "X-Pagination" in resp.headers:
+            try:
+                import json as _json
+                pagination = _json.loads(resp.headers["X-Pagination"])
+            except Exception:
+                pass
+
+        data = resp.json()
+        items = [RuleSummary(**item) for item in data] if isinstance(data, list) else []
+        return items, pagination
+
 
     # -------------------------------------------------------------
     # ۳. جزییات قانون و نسخه‌ها (Rule Details & Versions)
