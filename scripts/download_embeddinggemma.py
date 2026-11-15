@@ -17,6 +17,9 @@ FILES_TO_DOWNLOAD = [
     "tokenizer.json",
     "tokenizer.model",
     "tokenizer_config.json",
+    "preprocessor_config.json",
+    "processor_config.json",
+    "chat_template.jinja",
     "1_Pooling/config.json",
     "2_Normalize/config.json",
     "model.safetensors"
