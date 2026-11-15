@@ -23,4 +23,7 @@ ENV/
 data/
 downloads/
 raw_data/
+models/
+*.bin
+*.safetensors
 *.log

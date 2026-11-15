@@ -4,6 +4,7 @@
 """
 
 from typing import List, Dict, Set, Optional, Any
+from pathlib import Path
 import networkx as nx
 from .ontology import RelationType, NodeType, GraphNode, GraphEdge
 
@@ -11,9 +12,43 @@ from .ontology import RelationType, NodeType, GraphNode, GraphEdge
 class GraphTraverser:
     """پیمایش گراف و استخراج زیرگراف مرتبط (Sub-graph Extraction) برای پاسخ‌گویی دقیق RAG"""
 
-    def __init__(self, graph: nx.DiGraph, nodes_dict: Dict[str, GraphNode]):
+    def __init__(self, graph: nx.DiGraph, nodes_dict: Optional[Dict[str, Any]] = None):
         self.graph = graph
-        self.nodes = nodes_dict
+        self.nodes = nodes_dict or {}
+
+    @classmethod
+    def load_from_json(cls, json_path: Path) -> "GraphTraverser":
+        """بارگذاری گراف و گره‌ها از فایل json تولید شده توسط GraphExporter"""
+        import json
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        g = nx.DiGraph()
+        nodes_dict = {}
+
+        for n in data.get("nodes", []):
+            nid = n["id"]
+            lbl = n.get("label", "Unknown")
+            name = n.get("name", "")
+            props = n.get("properties", {})
+            node_obj = GraphNode(
+                id=nid,
+                label=NodeType(lbl) if lbl in NodeType._value2member_map_ else NodeType.DOCUMENT,
+                name=name,
+                properties=props
+            )
+            nodes_dict[nid] = node_obj
+            g.add_node(nid, label=lbl, name=name, **props)
+
+        for e in data.get("edges", []):
+            src = e["source"]
+            tgt = e["target"]
+            rel = e.get("relation", "")
+            lbl_fa = e.get("label_fa", "")
+            props = e.get("properties", {})
+            g.add_edge(src, tgt, relation_type=rel, label_fa=lbl_fa, **props)
+
+        return cls(graph=g, nodes_dict=nodes_dict)
 
     def expand_document_context(self, rule_id: int, max_depth: int = 1) -> Dict[str, Any]:
         """

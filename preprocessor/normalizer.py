@@ -159,3 +159,15 @@ def extract_numeric_article(title: str) -> Optional[str]:
         return latin_num
 
     return None
+
+
+class PersianLegalNormalizer:
+    """Class wrapper for Persian legal text normalization."""
+    @staticmethod
+    def normalize(text: str, to_persian_digits: bool = True, remove_harakat: bool = True) -> str:
+        return normalize_persian_text(text, to_persian_digits=to_persian_digits, remove_harakat=remove_harakat)
+
+    @staticmethod
+    def clean_html(html_content: Optional[str]) -> str:
+        return clean_html(html_content)
+
