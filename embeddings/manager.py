@@ -48,9 +48,9 @@ class EmbeddingManager:
         setup_hf_proxy()
         from sentence_transformers import SentenceTransformer
 
-        local_model_path = Path("models/embeddinggemma-2")
+        local_model_path = Path(__file__).resolve().parent.parent / "models" / "embeddinggemma-2"
         target_model = self.model_name
-        if self.model_name == "google/embeddinggemma-2" and (local_model_path / "model.safetensors").exists():
+        if (local_model_path / "model.safetensors").exists():
             target_model = str(local_model_path.resolve())
             logger.info("Using local model directory: %s", target_model)
 
