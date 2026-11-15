@@ -54,12 +54,24 @@ class EmbeddingManager:
             target_model = str(local_model_path.resolve())
             logger.info("Using local model directory: %s", target_model)
 
-        logger.info("Loading embedding model '%s' (dimension=%d)...", target_model, self.dimension)
+        if self.device is None:
+            import torch
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        logger.info("Loading embedding model '%s' on device '%s' (dimension=%d)...", target_model, self.device, self.dimension)
         try:
+            import torch
+            model_kwargs = {}
+            if self.device == "cpu":
+                model_kwargs["dtype"] = torch.float32
+            else:
+                model_kwargs["dtype"] = torch.bfloat16
+
             self.model = SentenceTransformer(
                 target_model,
                 device=self.device,
-                trust_remote_code=True
+                trust_remote_code=True,
+                model_kwargs=model_kwargs
             )
             # If the model supports truncate_dim
             if hasattr(self.model, "truncate_dim") and self.dimension:
