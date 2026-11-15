@@ -12,6 +12,7 @@ from .models import ParsedDocument, NormalizedSection, LegalChunk
 from .normalizer import normalize_persian_text
 from .parser import LegalTreeParser
 from .chunker import LegalChunker
+from .attachment_processor import AttachmentProcessor
 
 logger = logging.getLogger("regulatory_crawler")
 
@@ -29,6 +30,7 @@ class DocumentProcessor:
 
         self.tree_parser = LegalTreeParser()
         self.chunker = LegalChunker()
+        self.attachment_processor = AttachmentProcessor()
 
     def process_document(self, raw_doc: dict) -> ParsedDocument:
         """پردازش یک سند خام و تولید بخش‌ها و چانک‌های استاندارد"""
@@ -80,6 +82,12 @@ class DocumentProcessor:
             status=status,
             sections=sections
         )
+
+        # ۳. استخراج و چانکینگ هوشمند پیوست‌های رسمی (PDF و Word)
+        att_chunks = self.attachment_processor.process_attachments_for_document(raw_doc)
+        if att_chunks:
+            logger.info("سند %s: %d چانک از فایل‌های پیوست رسمی با موفقیت استخراج شد.", rule_id, len(att_chunks))
+            chunks.extend(att_chunks)
 
         parsed_doc = ParsedDocument(
             rule_id=rule_id,
