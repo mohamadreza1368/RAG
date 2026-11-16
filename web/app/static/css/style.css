@@ -629,6 +629,9 @@ button {
 .thinking-block-completed summary::-webkit-details-marker {
     display: none;
 }
+.thinking-block-completed[open] .thinking-chevron {
+    transform: rotate(180deg);
+}
 
 .thinking-body {
     scrollbar-width: thin;

@@ -84,11 +84,45 @@ const Chat = {
     graphInstances: {},
     graphDatasets: {},
     pendingDeleteSessionId: null,
+    thinkingStartTime: null,
+    thinkingDurationSeconds: null,
+    thinkingTimerInterval: null,
 
     toPersianDigits(str) {
         if (str === null || str === undefined) return '';
         const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
         return String(str).replace(/[0-9]/g, w => persianDigits[+w]);
+    },
+
+    startThinkingTimer(contentEl) {
+        if (this.thinkingStartTime !== null) return;
+        this.thinkingStartTime = Date.now();
+        this.thinkingDurationSeconds = null;
+        if (this.thinkingTimerInterval) {
+            clearInterval(this.thinkingTimerInterval);
+        }
+        this.thinkingTimerInterval = setInterval(() => {
+            if (!this.thinkingStartTime) return;
+            const elapsed = Math.max(1, Math.floor((Date.now() - this.thinkingStartTime) / 1000));
+            const targetEl = contentEl || this.activeContentEl;
+            if (targetEl) {
+                const counterEl = targetEl.querySelector('.thinking-block-active .thinking-timer-seconds');
+                if (counterEl) {
+                    counterEl.textContent = `Thinking: ${elapsed}s`;
+                }
+            }
+        }, 1000);
+    },
+
+    stopThinkingTimer() {
+        if (this.thinkingTimerInterval) {
+            clearInterval(this.thinkingTimerInterval);
+            this.thinkingTimerInterval = null;
+        }
+        if (this.thinkingStartTime) {
+            this.thinkingDurationSeconds = Math.max(1, Math.round((Date.now() - this.thinkingStartTime) / 1000));
+            this.thinkingStartTime = null;
+        }
     },
 
     isMeterOrChart(code, lang) {
@@ -1693,7 +1727,10 @@ const Chat = {
     },
 
     copyThinkingContent(btn, event) {
-        if (event) event.stopPropagation();
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         const wrapper = btn.closest('.thinking-block-completed, .thinking-block-active');
         if (!wrapper) return;
         const bodyEl = wrapper.querySelector('.thinking-body');
@@ -1709,7 +1746,61 @@ const Chat = {
         }
     },
 
-    renderAssistantMessage(reasoning, content, isReasoningActive = false) {
+    buildActiveThinkingHtml(seconds = 1) {
+        const s = Math.max(1, parseInt(seconds, 10) || 1);
+        return `
+            <div class="thinking-block-active mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-mono select-none shadow-xs" dir="rtl">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <i data-lucide="brain" class="w-3.5 h-3.5 text-amber-500 animate-pulse"></i>
+                <span class="thinking-timer-seconds font-bold font-mono text-xs">Thinking: ${s}s</span>
+            </div>
+        `;
+    },
+
+    buildCompletedThinkingHtml(reasoning, durationSeconds = null) {
+        if (!reasoning) return '';
+        let timeBadge = '';
+        const dur = (durationSeconds !== null && durationSeconds !== undefined) ? Number(durationSeconds) : (this.thinkingDurationSeconds || null);
+        if (dur && dur > 0) {
+            timeBadge = `Thinking: ${dur}s`;
+        } else {
+            const wordCount = (reasoning.match(/\S+/g) || []).length;
+            timeBadge = wordCount > 0 ? `${Chat.toPersianDigits(wordCount)} کلمه` : 'فرآیند تفکر';
+        }
+
+        const safeReasoning = (reasoning || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        return `
+            <details class="thinking-block-completed mb-3 rounded-xl bg-gray-100/90 dark:bg-[#252528] border border-gray-200 dark:border-gray-700/60 p-2.5 text-xs transition-all group shadow-xs" dir="rtl">
+                <summary class="cursor-pointer font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between select-none hover:text-emerald-500 transition-colors list-none">
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                            <i data-lucide="brain" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">${timeBadge}</span>
+                        <div class="flex items-center justify-center w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-transform duration-200">
+                            <i data-lucide="chevron-down" class="thinking-chevron w-3.5 h-3.5 transition-transform duration-200"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="Chat.copyThinkingContent(this, event)" class="p-1 px-2 rounded-md bg-gray-200/70 dark:bg-gray-700/70 hover:bg-emerald-500 hover:text-white text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 transition-colors" title="کپی استدلال">
+                            <i data-lucide="copy" class="w-3 h-3"></i>
+                            <span>کپی</span>
+                        </button>
+                    </div>
+                </summary>
+                <div class="thinking-body mt-2.5 pt-2.5 border-t border-gray-200 dark:border-gray-700/50 whitespace-pre-wrap font-mono text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed max-h-72 overflow-y-auto pl-1 select-text">${safeReasoning}</div>
+            </details>
+        `;
+    },
+
+    renderAssistantMessage(reasoning, content, isReasoningActive = false, durationSeconds = null) {
         let actualReasoning = reasoning || '';
         let actualContent = content || '';
         let activeThinking = isReasoningActive;
@@ -1733,61 +1824,9 @@ const Chat = {
         let thinkingHtml = '';
         if (actualReasoning || activeThinking) {
             if (activeThinking) {
-                // Live active thinking phase
-                thinkingHtml = `
-                    <div class="thinking-block-active mb-3.5 p-3.5 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/30 text-xs shadow-xs" dir="rtl">
-                        <div class="flex items-center justify-between pb-2 mb-2 border-b border-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold">
-                            <div class="flex items-center gap-2">
-                                <span class="relative flex h-2.5 w-2.5">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                                </span>
-                                <i data-lucide="brain" class="w-4 h-4 text-amber-500"></i>
-                                <span>در حال تحلیل و استدلال عمیق مدل...</span>
-                            </div>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 font-mono">
-                                Thinking
-                            </span>
-                        </div>
-                        <div class="thinking-body whitespace-pre-wrap font-mono text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed max-h-60 overflow-y-auto pl-1 opacity-90 select-text">
-                            ${actualReasoning || 'در حال واکاوی داده‌ها و استخراج پاسخ...'}
-                        </div>
-                    </div>
-                `;
+                thinkingHtml = this.buildActiveThinkingHtml(durationSeconds || 1);
             } else {
-                // Completed thinking block (collapsible)
-                const wordCount = actualReasoning ? (actualReasoning.match(/\S+/g) || []).length : 0;
-                const countBadge = wordCount > 0 ? `${Chat.toPersianDigits(wordCount)} کلمه استدلال` : 'فرآیند تفکر';
-                const safeReasoning = (actualReasoning || '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
-
-                thinkingHtml = `
-                    <details class="thinking-block-completed mb-3.5 rounded-2xl bg-gray-100/90 dark:bg-[#252528] border border-gray-200 dark:border-gray-700/60 p-3 text-xs transition-all group shadow-xs" dir="rtl">
-                        <summary class="cursor-pointer font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between select-none hover:text-emerald-500 transition-colors">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                    <i data-lucide="brain" class="w-3.5 h-3.5"></i>
-                                </div>
-                                <span class="font-semibold text-gray-700 dark:text-gray-300">مشاهده فرآیند استدلال و تفکر مدل</span>
-                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700/80 text-gray-500 dark:text-gray-400 font-mono">
-                                    ${countBadge}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="Chat.copyThinkingContent(this, event)" class="p-1 px-2 rounded-lg bg-gray-200/70 dark:bg-gray-700/70 hover:bg-emerald-500 hover:text-white text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 transition-colors" title="کپی استدلال">
-                                    <i data-lucide="copy" class="w-3 h-3"></i>
-                                    <span>کپی استدلال</span>
-                                </button>
-                                <div class="flex items-center gap-1 text-gray-400 group-hover:text-emerald-500 text-[11px]">
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200 group-open:rotate-180"></i>
-                                </div>
-                            </div>
-                        </summary>
-                        <div class="thinking-body mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/50 whitespace-pre-wrap font-mono text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed max-h-72 overflow-y-auto pl-1 select-text">${safeReasoning}</div>
-                    </details>
-                `;
+                thinkingHtml = this.buildCompletedThinkingHtml(actualReasoning, durationSeconds);
             }
         }
 
@@ -2977,6 +3016,7 @@ const Chat = {
 
     async stopStreaming() {
         if (!this.isStreaming && !this.abortController && !this.activeReader) return;
+        this.stopThinkingTimer();
         this.isStreaming = false;
 
         // 1. Cancel fetch stream reader immediately
@@ -3007,7 +3047,7 @@ const Chat = {
             if (accumulatedContent.trim() || accumulatedReasoning.trim()) {
                 const rtl = this.isRTLText(accumulatedContent);
                 contentEl.setAttribute('dir', rtl ? 'rtl' : 'ltr');
-                contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false);
+                contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false, this.thinkingDurationSeconds);
 
                 const hasTables = /\|(?:\s*:?-+:?\s*\|)+/.test(accumulatedContent);
                 let actionsContainer = asstBubbleWrapper.querySelector('.msg-actions-container');
@@ -3154,6 +3194,9 @@ const Chat = {
                 currentResult = parsed.result;
                 if (parsed.isThinkingActive) {
                     isThinkingPhase = true;
+                    this.startThinkingTimer(contentEl);
+                } else {
+                    this.stopThinkingTimer();
                 }
             }
 
@@ -3164,26 +3207,16 @@ const Chat = {
 
             // --- Phase 1: Live Thinking Phase ---
             if (isThinkingPhase && !currentResult) {
+                this.startThinkingTimer(contentEl);
                 if (activeThinkingBlock) {
-                    const activeThinkingBody = activeThinkingBlock.querySelector('.thinking-body');
-                    if (activeThinkingBody) {
-                        const distanceToBottom = activeThinkingBody.scrollHeight - activeThinkingBody.scrollTop - activeThinkingBody.clientHeight;
-                        const isNearBottom = distanceToBottom < 60;
-                        activeThinkingBody.textContent = currentReasoning;
-                        if (isNearBottom) {
-                            activeThinkingBody.scrollTop = activeThinkingBody.scrollHeight;
-                        }
-                    }
+                    // Timer is ticking via setInterval; no need to dump raw text
                     this.scrollToBottom();
                     return;
                 } else {
                     // Mount active thinking block
-                    contentEl.innerHTML = this.renderAssistantMessage(currentReasoning, '', true);
+                    const elapsed = this.thinkingStartTime ? Math.max(1, Math.floor((Date.now() - this.thinkingStartTime) / 1000)) : 1;
+                    contentEl.innerHTML = this.renderAssistantMessage(currentReasoning, '', true, elapsed);
                     if (window.lucide) lucide.createIcons();
-                    const newThinkingBody = contentEl.querySelector('.thinking-block-active .thinking-body');
-                    if (newThinkingBody) {
-                        newThinkingBody.scrollTop = newThinkingBody.scrollHeight;
-                    }
                     this.scrollToBottom();
                     return;
                 }
@@ -3192,38 +3225,8 @@ const Chat = {
             // --- Phase 2: Thinking Completed -> Transition to Answer ---
             // If active thinking block exists and thinking ended, convert to completed block ONCE
             if (activeThinkingBlock && !isThinkingPhase) {
-                const wordCount = currentReasoning ? (currentReasoning.match(/\S+/g) || []).length : 0;
-                const countBadge = wordCount > 0 ? `${Chat.toPersianDigits(wordCount)} کلمه استدلال` : 'فرآیند تفکر';
-                const safeReasoning = (currentReasoning || '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
-
-                const completedHtml = `
-                    <details class="thinking-block-completed mb-3.5 rounded-2xl bg-gray-100/90 dark:bg-[#252528] border border-gray-200 dark:border-gray-700/60 p-3 text-xs transition-all group shadow-xs" dir="rtl">
-                        <summary class="cursor-pointer font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between select-none hover:text-emerald-500 transition-colors">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                    <i data-lucide="brain" class="w-3.5 h-3.5"></i>
-                                </div>
-                                <span class="font-semibold text-gray-700 dark:text-gray-300">مشاهده فرآیند استدلال و تفکر مدل</span>
-                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700/80 text-gray-500 dark:text-gray-400 font-mono">
-                                    ${countBadge}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="Chat.copyThinkingContent(this, event)" class="p-1 px-2 rounded-lg bg-gray-200/70 dark:bg-gray-700/70 hover:bg-emerald-500 hover:text-white text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 transition-colors" title="کپی استدلال">
-                                    <i data-lucide="copy" class="w-3 h-3"></i>
-                                    <span>کپی استدلال</span>
-                                </button>
-                                <div class="flex items-center gap-1 text-gray-400 group-hover:text-emerald-500 text-[11px]">
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200 group-open:rotate-180"></i>
-                                </div>
-                            </div>
-                        </summary>
-                        <div class="thinking-body mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/50 whitespace-pre-wrap font-mono text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed max-h-72 overflow-y-auto pl-1 select-text">${safeReasoning}</div>
-                    </details>
-                `;
+                this.stopThinkingTimer();
+                const completedHtml = this.buildCompletedThinkingHtml(currentReasoning, this.thinkingDurationSeconds);
 
                 let wrapper = contentEl.querySelector('.assistant-message-body');
                 if (!wrapper) {
@@ -3429,6 +3432,7 @@ const Chat = {
 
                             // 6. Handle Reasoning Stream
                             if (parsed.reasoning) {
+                                this.startThinkingTimer(contentEl);
                                 accumulatedReasoning += parsed.reasoning;
                                 this.currentAccumulatedReasoning = accumulatedReasoning;
                                 scheduleStreamRender(true);
@@ -3436,6 +3440,9 @@ const Chat = {
 
                             // 7. Handle Token Stream
                             if (parsed.token) {
+                                if (this.thinkingStartTime) {
+                                    this.stopThinkingTimer();
+                                }
                                 accumulatedContent += parsed.token;
                                 this.currentAccumulatedContent = accumulatedContent;
                                 scheduleStreamRender(false);
@@ -3447,6 +3454,7 @@ const Chat = {
                 }
             }
 
+            this.stopThinkingTimer();
             renderFramePending = false;
 
             if (receivedRagMetadata) {
@@ -3454,7 +3462,7 @@ const Chat = {
             }
 
             if ((accumulatedContent.trim() || accumulatedReasoning.trim()) && !asstBubbleWrapper.dataset.rawContent) {
-                contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false);
+                contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false, this.thinkingDurationSeconds);
                 
                 const hasTables = /\|(?:\s*:?-+:?\s*\|)+/.test(accumulatedContent);
                 let actionsContainer = asstBubbleWrapper.querySelector('.msg-actions-container');
@@ -3468,6 +3476,9 @@ const Chat = {
                 if (accumulatedReasoning) {
                     asstBubbleWrapper.dataset.rawReasoning = accumulatedReasoning;
                 }
+                if (this.thinkingDurationSeconds) {
+                    asstBubbleWrapper.dataset.thinkingDuration = this.thinkingDurationSeconds;
+                }
 
                 if (receivedRagMetadata) {
                     this.mountRagMetadataCard(asstBubbleWrapper, contentEl, receivedRagMetadata);
@@ -3479,6 +3490,7 @@ const Chat = {
             }
 
         } catch (err) {
+            this.stopThinkingTimer();
             renderFramePending = false;
             this.hideQueuePopup(true);
             if (err.name === 'AbortError' || !this.isStreaming) {
@@ -3486,7 +3498,7 @@ const Chat = {
                     this.mountRagMetadataCard(asstBubbleWrapper, contentEl, receivedRagMetadata);
                 }
                 if ((accumulatedContent.trim() || accumulatedReasoning.trim()) && !asstBubbleWrapper.dataset.rawContent) {
-                    contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false);
+                    contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false, this.thinkingDurationSeconds);
                     
                     const hasTables = /\|(?:\s*:?-+:?\s*\|)+/.test(accumulatedContent);
                     let actionsContainer = asstBubbleWrapper.querySelector('.msg-actions-container');
@@ -3500,6 +3512,9 @@ const Chat = {
                     if (accumulatedReasoning) {
                         asstBubbleWrapper.dataset.rawReasoning = accumulatedReasoning;
                     }
+                    if (this.thinkingDurationSeconds) {
+                        asstBubbleWrapper.dataset.thinkingDuration = this.thinkingDurationSeconds;
+                    }
 
                     this.highlightCode(contentEl);
                     this.enhanceTablesAndMeters(contentEl);
@@ -3510,6 +3525,7 @@ const Chat = {
             this.renderErrorCard(contentEl, `ارتباط با سرور قطع شد: ${err.message}`);
             App.toast('خطا در ارتباط با سرور', 'error');
         } finally {
+            this.stopThinkingTimer();
             this.hideQueuePopup(true);
             this.isStreaming = false;
             this.setStreamingUI(false);
@@ -3526,37 +3542,6 @@ const Chat = {
             if (window.lucide) lucide.createIcons();
         }
     },
-
-    isDownloadableContent(content, exportIntent = null) {
-        if (!content || typeof content !== 'string') return false;
-
-        // 1. Explicit user export intent (user requested docx/xlsx)
-        if (exportIntent === 'docx' || exportIntent === 'xlsx' || exportIntent === 'both') {
-            return true;
-        }
-
-        // 2. Formal Letter / Official Document Template
-        const hasLetterPattern = /(?:پیش‌نویس\s*نامه|نامه\s*اداری|شماره\s*نامه|پیرو\s*نامه|عطف\s*به|جناب\s*آقای|سرکار\s*خانم|ریاست\s*محترم|مدیریت\s*محترم|با\s*احترام|احتراماً|رونوشت\s*:|صورتجلسه|دستور\s*جلسه)/.test(content);
-        if (hasLetterPattern && content.length > 140) {
-            return true;
-        }
-
-        // 3. Statistical Analysis / Financial Report with Charts or Substantial Tables
-        const hasAnalyticalPattern = /(?:گزارش\s*تحلیلی|تحلیل\s*آماری|شاخص‌های\s*کلیدی|تحلیل\s*داده‌ها|آمار\s*معاملات|ترازنامه|بودجه|صورت\s*مالی|گزارش\s*عملکرد)/.test(content);
-        const hasChart = /```chart[\s\S]*?```/.test(content);
-
-        // Count markdown table rows
-        const tableLines = content.split('\n').filter(line => /^\|.*\|$/.test(line.trim()));
-        const hasSubstantialTable = tableLines.length >= 5; // Header + separator + at least 3 data rows
-
-        if (hasAnalyticalPattern && (hasChart || hasSubstantialTable)) {
-            return true;
-        }
-
-        // 4. Large tabular data dataset on its own (at least 6 rows)
-        if (tableLines.length >= 6) {
-            return true;
-        }
 
     isDownloadableContent(content, exportIntent = null) {
         return false;
@@ -3579,7 +3564,6 @@ const Chat = {
                 </button>
             </div>
         `;
-    },
     },
 
     async downloadExport({ format, content = null, sessionId = null, messageId = null, title = null }) {
