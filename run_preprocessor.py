@@ -58,6 +58,18 @@ def main():
         help="پردازش یک سند مشخص بر اساس شناسه (مثلاً 71485)"
     )
     parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=900,
+        help="سقف تعداد توکن در هر چانک (پیش‌فرض: ۹۰۰ توکن)"
+    )
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=200,
+        help="میزان هم‌پوشانی توکن‌ها بین دو چانک مجاور (پیش‌فرض: ۲۰۰ توکن)"
+    )
+    parser.add_argument(
         "--stats",
         action="store_true",
         help="نمایش آمار و ارقام چانک‌ها و اسناد پردازش‌شده"
@@ -65,7 +77,7 @@ def main():
 
     args = parser.parse_args()
 
-    processor = DocumentProcessor()
+    processor = DocumentProcessor(target_tokens=args.chunk_size, overlap_tokens=args.chunk_overlap)
 
     if args.stats:
         print_stats()

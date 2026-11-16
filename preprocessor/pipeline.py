@@ -20,7 +20,12 @@ logger = logging.getLogger("regulatory_crawler")
 class DocumentProcessor:
     """موتور پردازش، نرمال‌سازی و ساختاردهی اسناد حقوقی"""
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        output_dir: Optional[Path] = None,
+        target_tokens: int = 900,
+        overlap_tokens: int = 200
+    ):
         self.output_dir = output_dir or Path("data/processed")
         self.docs_dir = self.output_dir / "documents"
         self.chunks_dir = self.output_dir / "chunks"
@@ -29,8 +34,8 @@ class DocumentProcessor:
         self.chunks_dir.mkdir(parents=True, exist_ok=True)
 
         self.tree_parser = LegalTreeParser()
-        self.chunker = LegalChunker()
-        self.attachment_processor = AttachmentProcessor()
+        self.chunker = LegalChunker(max_tokens_per_chunk=target_tokens, overlap_tokens=overlap_tokens)
+        self.attachment_processor = AttachmentProcessor(target_tokens=target_tokens, overlap_tokens=overlap_tokens)
 
     def process_document(self, raw_doc: dict) -> ParsedDocument:
         """پردازش یک سند خام و تولید بخش‌ها و چانک‌های استاندارد"""

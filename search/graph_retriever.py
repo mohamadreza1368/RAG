@@ -21,14 +21,23 @@ class GraphAugmentedRetriever:
         self,
         query: str,
         top_k: int = 5,
+        mode: str = "hybrid_rrf",
+        alpha: float = 0.7,
+        filter_toc: bool = True,
         expand_hops: int = 1,
         include_amendments: bool = True
     ) -> Dict[str, Any]:
         """
-        Executes hybrid search and enriches retrieved chunks with knowledge graph context.
+        Executes hybrid search with the chosen similarity metric and enriches retrieved chunks with knowledge graph context.
         """
-        # 1. Perform Hybrid Search
-        chunks = self.hybrid_retriever.search(query=query, top_k=top_k)
+        # 1. Perform Hybrid / Semantic Search with chosen metric
+        chunks = self.hybrid_retriever.search(
+            query=query,
+            mode=mode,
+            top_k=top_k,
+            alpha=alpha,
+            filter_toc=filter_toc
+        )
 
         enriched_chunks = []
         doc_graph_contexts: Dict[int, Dict[str, Any]] = {}

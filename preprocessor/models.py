@@ -42,6 +42,7 @@ class LegalChunk(BaseModel):
     contextual_content: str  # متن غنی‌شده با متادیتا و هدر کانتکست
     token_count: int = 0
     status: Optional[str] = None  # وضعیت تنقیحی: معتبر، منسوخ و...
+    is_toc: bool = False  # آیا این چانک فهرست مطالب است یا متن اصلی
     source_url: str
     created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
 
