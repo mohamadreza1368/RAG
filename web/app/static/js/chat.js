@@ -2452,23 +2452,21 @@ const Chat = {
                 return;
             }
 
-            // Message Export DOCX
-            const exportDocxBtn = e.target.closest('.export-docx-btn, .btn-direct-download-docx');
-            if (exportDocxBtn) {
+            // Message Like Button
+            const likeMsgBtn = e.target.closest('.like-msg-btn');
+            if (likeMsgBtn) {
                 e.preventDefault();
                 e.stopPropagation();
-                const content = this.getMessageRawContent(exportDocxBtn);
-                this.downloadExport({ format: 'docx', content });
+                this.submitFeedback(likeMsgBtn, 'like');
                 return;
             }
 
-            // Message Export XLSX
-            const exportXlsxBtn = e.target.closest('.export-xlsx-btn, .btn-direct-download-xlsx');
-            if (exportXlsxBtn) {
+            // Message Dislike Button
+            const dislikeMsgBtn = e.target.closest('.dislike-msg-btn');
+            if (dislikeMsgBtn) {
                 e.preventDefault();
                 e.stopPropagation();
-                const content = this.getMessageRawContent(exportXlsxBtn);
-                this.downloadExport({ format: 'xlsx', content });
+                this.submitFeedback(dislikeMsgBtn, 'dislike');
                 return;
             }
         });
@@ -2702,7 +2700,7 @@ const Chat = {
                 if (data.messages && data.messages.length > 0) {
                     if (welcomeScreen) welcomeScreen.classList.add('hidden');
                     data.messages.forEach(msg => {
-                        this.appendMessage(msg.role, msg.content, msg.has_attachment, msg.attachment_name, msg.reasoning, msg.rag_metadata);
+                        this.appendMessage(msg.role, msg.content, msg.has_attachment, msg.attachment_name, msg.reasoning, msg.rag_metadata, msg.id, msg.feedback);
                     });
                     this.scrollToBottom();
                 } else {
@@ -2862,7 +2860,7 @@ const Chat = {
         this.openDeleteModal(this.currentSessionId);
     },
 
-    appendMessage(role, content, hasAttachment = false, attachmentName = '', reasoning = null, ragMetadata = null) {
+    appendMessage(role, content, hasAttachment = false, attachmentName = '', reasoning = null, ragMetadata = null, messageId = null, feedback = null) {
         const streamContainer = document.getElementById('chat-stream');
         const welcomeScreen = document.getElementById('welcome-screen');
         if (welcomeScreen) welcomeScreen.classList.add('hidden');
@@ -2874,6 +2872,9 @@ const Chat = {
 
         const msgDiv = document.createElement('div');
         msgDiv.className = `flex gap-3 animate-fade-in ${isUser ? 'justify-end user-message-node' : 'justify-start'}`;
+        if (messageId) {
+            msgDiv.dataset.messageId = messageId;
+        }
 
         let renderedContent = '';
         if (isUser) {
@@ -2890,8 +2891,7 @@ const Chat = {
                 </div>
             `;
         } else {
-            const hasTables = /\|(?:\s*:?-+:?\s*\|)+/.test(content || '');
-            const actionsHtml = this.buildMessageActionToolbar(content, null, hasTables);
+            const actionsHtml = this.buildMessageActionToolbar(content, messageId, feedback);
             const parsedAssistantHtml = this.renderAssistantMessage(reasoning || '', content || '', false);
             renderedContent = `
                 <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm">
@@ -3056,7 +3056,7 @@ const Chat = {
                     actionsContainer.className = 'msg-actions-container w-full';
                     contentEl.parentNode.appendChild(actionsContainer);
                 }
-                actionsContainer.innerHTML = this.buildMessageActionToolbar(accumulatedContent, null, hasTables);
+                actionsContainer.innerHTML = this.buildMessageActionToolbar(accumulatedContent, asstBubbleWrapper.dataset.messageId || null, null);
                 asstBubbleWrapper.dataset.rawContent = accumulatedContent;
                 if (accumulatedReasoning) {
                     asstBubbleWrapper.dataset.rawReasoning = accumulatedReasoning;
@@ -3414,6 +3414,16 @@ const Chat = {
                                 }
                             }
 
+                            // 3.5. Handle Message ID from Server
+                            if (parsed.message_id) {
+                                asstBubbleWrapper.dataset.messageId = parsed.message_id;
+                                let actionsContainer = asstBubbleWrapper.querySelector('.msg-actions-container');
+                                if (actionsContainer) {
+                                    actionsContainer.innerHTML = this.buildMessageActionToolbar(accumulatedContent, parsed.message_id, null);
+                                    if (window.lucide) lucide.createIcons();
+                                }
+                            }
+
                             // 4. Handle Token Quota Display
                             if (parsed.tokens_used !== undefined && parsed.token_quota !== undefined) {
                                 App.updateTokenDisplay(parsed.tokens_used, parsed.token_quota);
@@ -3471,7 +3481,7 @@ const Chat = {
                     actionsContainer.className = 'msg-actions-container w-full';
                     contentEl.parentNode.appendChild(actionsContainer);
                 }
-                actionsContainer.innerHTML = this.buildMessageActionToolbar(accumulatedContent, receivedExportIntent, hasTables);
+                actionsContainer.innerHTML = this.buildMessageActionToolbar(accumulatedContent, asstBubbleWrapper.dataset.messageId || null, null);
                 asstBubbleWrapper.dataset.rawContent = accumulatedContent;
                 if (accumulatedReasoning) {
                     asstBubbleWrapper.dataset.rawReasoning = accumulatedReasoning;
@@ -3507,7 +3517,7 @@ const Chat = {
                         actionsContainer.className = 'msg-actions-container w-full';
                         contentEl.parentNode.appendChild(actionsContainer);
                     }
-                    actionsContainer.innerHTML = this.buildMessageActionToolbar(accumulatedContent, receivedExportIntent, hasTables);
+                    actionsContainer.innerHTML = this.buildMessageActionToolbar(accumulatedContent, asstBubbleWrapper.dataset.messageId || null, null);
                     asstBubbleWrapper.dataset.rawContent = accumulatedContent;
                     if (accumulatedReasoning) {
                         asstBubbleWrapper.dataset.rawReasoning = accumulatedReasoning;
@@ -3547,21 +3557,29 @@ const Chat = {
         return false;
     },
 
-    buildMessageActionToolbar(content, exportIntent = null, hasTables = false) {
+    buildMessageActionToolbar(content, messageId = null, feedback = null) {
+        const likeActive = feedback === 'like' ? 'active' : '';
+        const dislikeActive = feedback === 'dislike' ? 'active' : '';
+        const msgIdAttr = messageId ? `data-message-id="${messageId}"` : '';
+
         return `
-            <div class="msg-action-bar">
-                <button type="button" class="msg-action-btn msg-action-btn-copy copy-msg-btn" title="کپی متن کامل">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    <span>کپی</span>
-                </button>
-                <button type="button" class="msg-action-btn msg-action-btn-docx export-docx-btn" title="دریافت فایل Word (.docx)">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>خروجی Word</span>
-                </button>
-                <button type="button" class="msg-action-btn msg-action-btn-xlsx export-xlsx-btn" title="دریافت فایل Excel (.xlsx)">
-                    <i data-lucide="sheet" class="w-3.5 h-3.5"></i>
-                    <span>خروجی Excel</span>
-                </button>
+            <div class="msg-action-bar flex items-center justify-between" ${msgIdAttr}>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" class="msg-action-btn msg-action-btn-copy copy-msg-btn" title="کپی متن پاسخ">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>کپی</span>
+                    </button>
+                </div>
+                <div class="flex items-center gap-1.5 feedback-buttons-group">
+                    <button type="button" class="msg-action-btn msg-action-btn-like like-msg-btn ${likeActive}" title="پاسخ مفید بود (لایک)">
+                        <i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i>
+                        <span>مفید بود</span>
+                    </button>
+                    <button type="button" class="msg-action-btn msg-action-btn-dislike dislike-msg-btn ${dislikeActive}" title="نیاز به بهبود دارد (دیس‌لایک)">
+                        <i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i>
+                        <span>نیاز به بهبود</span>
+                    </button>
+                </div>
             </div>
         `;
     },
@@ -3638,7 +3656,7 @@ const Chat = {
     copyMessageContent(btn) {
         const raw = this.getMessageRawContent(btn);
         if (!raw) return;
-        App.copyToClipboard(raw, 'متن گزارش با موفقیت کپی شد!');
+        App.copyToClipboard(raw, 'متن پیام با موفقیت کپی شد!');
         const span = btn.querySelector('span');
         if (span) {
             const originalText = span.textContent;
@@ -3646,6 +3664,62 @@ const Chat = {
             setTimeout(() => {
                 span.textContent = originalText;
             }, 2000);
+        }
+    },
+
+    async submitFeedback(btn, type) {
+        const bar = btn.closest('.msg-action-bar');
+        const bubble = btn.closest('[data-message-id]') || bar;
+        const messageId = bubble ? bubble.dataset.messageId : null;
+
+        if (!messageId) {
+            App.toast('شناسه پیام هنوز ثبت نشده است، لطفاً کمی صبر کنید.', 'info');
+            return;
+        }
+
+        const group = btn.closest('.feedback-buttons-group') || bar;
+        const likeBtn = group ? group.querySelector('.like-msg-btn') : null;
+        const dislikeBtn = group ? group.querySelector('.dislike-msg-btn') : null;
+
+        const isCurrentlyActive = btn.classList.contains('active');
+        const nextFeedback = isCurrentlyActive ? 'none' : type;
+
+        // Visual optimistic update
+        if (likeBtn) likeBtn.classList.remove('active');
+        if (dislikeBtn) dislikeBtn.classList.remove('active');
+
+        if (nextFeedback === 'like' && likeBtn) {
+            likeBtn.classList.add('active');
+        } else if (nextFeedback === 'dislike' && dislikeBtn) {
+            dislikeBtn.classList.add('active');
+        }
+
+        try {
+            const res = await fetch(`/api/chat/message/${messageId}/feedback`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${App.token}`
+                },
+                body: JSON.stringify({ feedback: nextFeedback })
+            });
+
+            if (!res.ok) {
+                throw new Error('خطا در ثبت بازخورد');
+            }
+
+            if (nextFeedback === 'like') {
+                App.toast('ممنون از بازخورد شما! (پاسخ به عنوان مفید علامت‌گذاری شد)', 'success');
+            } else if (nextFeedback === 'dislike') {
+                App.toast('بازخورد شما ثبت شد و برای بهبود کیفیت پاسخ‌ها استفاده خواهد شد.', 'info');
+            } else {
+                App.toast('بازخورد لغو شد.', 'info');
+            }
+        } catch (e) {
+            console.error('Feedback error:', e);
+            App.toast('خطا در ثبت بازخورد', 'error');
+            if (likeBtn) likeBtn.classList.remove('active');
+            if (dislikeBtn) dislikeBtn.classList.remove('active');
         }
     },
 

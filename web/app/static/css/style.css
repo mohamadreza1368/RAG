@@ -575,34 +575,34 @@ button {
     color: #f3f4f6;
 }
 
-.msg-action-btn-docx {
-    color: #2563eb;
-    background: rgba(37, 99, 235, 0.08);
-    border: 1px solid rgba(37, 99, 235, 0.2);
+.msg-action-btn-like {
+    color: #4b5563;
 }
-.dark .msg-action-btn-docx {
-    color: #60a5fa;
-    background: rgba(37, 99, 235, 0.15);
-    border-color: rgba(37, 99, 235, 0.3);
+.dark .msg-action-btn-like {
+    color: #9ca3af;
 }
-.msg-action-btn-docx:hover {
-    background: rgba(37, 99, 235, 0.2);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+.msg-action-btn-like:hover, .msg-action-btn-like.active {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+.dark .msg-action-btn-like:hover, .dark .msg-action-btn-like.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
 }
 
-.msg-action-btn-xlsx {
-    color: #059669;
-    background: rgba(5, 150, 105, 0.08);
-    border: 1px solid rgba(5, 150, 105, 0.2);
+.msg-action-btn-dislike {
+    color: #4b5563;
 }
-.dark .msg-action-btn-xlsx {
-    color: #34d399;
-    background: rgba(5, 150, 105, 0.15);
-    border-color: rgba(5, 150, 105, 0.3);
+.dark .msg-action-btn-dislike {
+    color: #9ca3af;
 }
-.msg-action-btn-xlsx:hover {
-    background: rgba(5, 150, 105, 0.2);
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+.msg-action-btn-dislike:hover, .msg-action-btn-dislike.active {
+    background: rgba(244, 63, 94, 0.15);
+    color: #e11d48;
+}
+.dark .msg-action-btn-dislike:hover, .dark .msg-action-btn-dislike.active {
+    background: rgba(244, 63, 94, 0.2);
+    color: #fb7185;
 }
 
 /* ============================================================

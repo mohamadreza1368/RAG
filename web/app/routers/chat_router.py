@@ -175,6 +175,8 @@ def get_session_details(
             "content": m.content,
             "reasoning": getattr(m, "reasoning", None),
             "rag_metadata": getattr(m, "rag_metadata", None),
+            "feedback": getattr(m, "feedback", None),
+            "feedback_reason": getattr(m, "feedback_reason", None),
             "has_attachment": m.has_attachment,
             "attachment_name": m.attachment_name,
             "created_at": m.created_at.isoformat()
@@ -534,6 +536,7 @@ async def send_message(
                 check_and_reset_user_daily_tokens(db_user, bg_db)
                 db_user.tokens_used += total_tokens_consumed
 
+            asst_msg_id = None
             if final_text.strip() or final_reasoning:
                 asst_msg = ChatMessage(
                     session_id=sess.id,
@@ -545,6 +548,8 @@ async def send_message(
                     tokens=resp_tokens_est
                 )
                 bg_db.add(asst_msg)
+                bg_db.flush()
+                asst_msg_id = asst_msg.id
 
             prompt_log = PromptLog(
                 user_id=user_id_val,
@@ -566,8 +571,15 @@ async def send_message(
             # Trigger asynchronous background session summarization to maintain topic continuity
             asyncio.create_task(update_session_summary_background(sess.id, active_model))
 
+            payload = {
+                'message_id': asst_msg_id,
+                'update_stats': True,
+                'export_intent': user_export_intent
+            }
             if db_user:
-                yield f"data: {json.dumps({'tokens_used': db_user.tokens_used, 'token_quota': db_user.token_quota, 'update_stats': True, 'export_intent': user_export_intent})}\n\n"
+                payload['tokens_used'] = db_user.tokens_used
+                payload['token_quota'] = db_user.token_quota
+            yield f"data: {json.dumps(payload)}\n\n"
 
         except Exception:
             bg_db.rollback()
@@ -692,3 +704,39 @@ def handle_export(
         media_type=media_type,
         headers=headers
     )
+
+
+class MessageFeedbackRequest(BaseModel):
+    feedback: str  # 'like', 'dislike', or 'none'
+    reason: Optional[str] = None
+
+
+@router.post("/message/{message_id}/feedback")
+def submit_message_feedback(
+    message_id: int,
+    body: MessageFeedbackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    msg = db.query(ChatMessage).filter(
+        ChatMessage.id == message_id,
+        ChatMessage.user_id == current_user.id
+    ).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="پیام مورد نظر یافت نشد")
+
+    clean_fb = body.feedback.lower().strip()
+    if clean_fb not in ["like", "dislike", "none"]:
+        raise HTTPException(status_code=400, detail="نوع بازخورد نامعتبر است")
+
+    msg.feedback = None if clean_fb == "none" else clean_fb
+    if body.reason is not None:
+        msg.feedback_reason = body.reason
+    db.commit()
+
+    return {
+        "status": "success",
+        "message_id": msg.id,
+        "feedback": msg.feedback,
+        "feedback_reason": msg.feedback_reason
+    }

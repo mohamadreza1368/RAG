@@ -81,6 +81,8 @@ class ChatMessage(Base):
     attachment_name = Column(String(255), nullable=True)
     tokens = Column(Integer, default=0)
     rag_metadata = Column(Text, nullable=True)
+    feedback = Column(String(20), nullable=True)
+    feedback_reason = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True, nullable=False)
 
     session = relationship("ChatSession", back_populates="messages")
@@ -312,6 +314,10 @@ def migrate_schema():
                     conn.exec_driver_sql("ALTER TABLE chat_messages ADD COLUMN reasoning TEXT")
                 if "rag_metadata" not in msg_cols:
                     conn.exec_driver_sql("ALTER TABLE chat_messages ADD COLUMN rag_metadata TEXT")
+                if "feedback" not in msg_cols:
+                    conn.exec_driver_sql("ALTER TABLE chat_messages ADD COLUMN feedback VARCHAR(20)")
+                if "feedback_reason" not in msg_cols:
+                    conn.exec_driver_sql("ALTER TABLE chat_messages ADD COLUMN feedback_reason TEXT")
         except Exception:
             pass
 
