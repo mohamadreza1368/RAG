@@ -21,7 +21,7 @@ class GraphAugmentedRetriever:
         self,
         query: str,
         top_k: int = 5,
-        mode: str = "hybrid_rrf",
+        mode: str = "hybrid_weighted",
         alpha: float = 0.7,
         filter_toc: bool = True,
         expand_hops: int = 1,

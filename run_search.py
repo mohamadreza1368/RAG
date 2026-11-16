@@ -181,9 +181,9 @@ if __name__ == "__main__":
     parser.add_argument("--dim", type=int, default=768)
     parser.add_argument(
         "--mode",
-        choices=["hybrid_rrf", "hybrid_weighted", "cosine", "dense", "bm25", "lexical"],
-        default="hybrid_rrf",
-        help="Similarity metric: hybrid_rrf, hybrid_weighted, cosine, bm25"
+        choices=["hybrid_weighted", "hybrid_rrf", "cosine", "dense", "bm25", "lexical"],
+        default="hybrid_weighted",
+        help="Similarity metric: hybrid_weighted (default), hybrid_rrf, cosine, bm25"
     )
     parser.add_argument(
         "--alpha",

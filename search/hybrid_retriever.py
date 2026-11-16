@@ -238,7 +238,7 @@ class HybridRetriever:
     def search(
         self,
         query: str,
-        mode: str = "hybrid_rrf",
+        mode: str = "hybrid_weighted",
         top_k: int = 10,
         alpha: float = 0.7,
         filters: Optional[Dict[str, Any]] = None,
@@ -246,12 +246,12 @@ class HybridRetriever:
     ) -> List[Dict[str, Any]]:
         """
         اجرای جستجو با معیار مشابهت انتخابی:
-          - 'hybrid_rrf': ترکیب رتبه‌ای وکتور + BM25 (پیش‌فرض)
-          - 'hybrid_weighted': ترکیب خطی وزن‌دار با ضریب alpha
+          - 'hybrid_weighted': ترکیب خطی وزن‌دار با ضریب alpha (پیش‌فرض: 0.7 وکتور + 0.3 واژگانی)
+          - 'hybrid_rrf': ترکیب رتبه‌ای وکتور + BM25
           - 'cosine' / 'dense': شباهت برداری کسینوسی خالص
           - 'bm25' / 'lexical': تطابق دقیق کلمات کلیدی با BM25
         """
-        clean_mode = (mode or "hybrid_rrf").lower().strip()
+        clean_mode = (mode or "hybrid_weighted").lower().strip()
 
         if clean_mode in ["hybrid_rrf", "rrf"]:
             return self.search_hybrid_rrf(query=query, top_k=top_k, filters=filters, filter_toc=filter_toc)
