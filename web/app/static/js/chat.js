@@ -3061,6 +3061,9 @@ const Chat = {
                 if (accumulatedReasoning) {
                     asstBubbleWrapper.dataset.rawReasoning = accumulatedReasoning;
                 }
+                if (this.currentRagMetadata) {
+                    this.mountRagMetadataCard(asstBubbleWrapper, contentEl, this.currentRagMetadata);
+                }
 
                 this.highlightCode(contentEl);
                 this.enhanceTablesAndMeters(contentEl);
@@ -3173,6 +3176,7 @@ const Chat = {
         this.activeBubbleWrapper = asstBubbleWrapper;
         this.currentAccumulatedReasoning = '';
         this.currentAccumulatedContent = '';
+        this.currentRagMetadata = null;
         let accumulatedReasoning = '';
         let accumulatedContent = '';
         let receivedExportIntent = null;
@@ -3437,7 +3441,7 @@ const Chat = {
                             // 5.5. Handle RAG Metadata (Citations & Warnings)
                             if (parsed.rag_metadata) {
                                 receivedRagMetadata = parsed.rag_metadata;
-                                this.mountRagMetadataCard(asstBubbleWrapper, contentEl, receivedRagMetadata);
+                                this.currentRagMetadata = receivedRagMetadata;
                             }
 
                             // 6. Handle Reasoning Stream
@@ -3466,10 +3470,6 @@ const Chat = {
 
             this.stopThinkingTimer();
             renderFramePending = false;
-
-            if (receivedRagMetadata) {
-                this.mountRagMetadataCard(asstBubbleWrapper, contentEl, receivedRagMetadata);
-            }
 
             if ((accumulatedContent.trim() || accumulatedReasoning.trim()) && !asstBubbleWrapper.dataset.rawContent) {
                 contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false, this.thinkingDurationSeconds);
@@ -3504,9 +3504,6 @@ const Chat = {
             renderFramePending = false;
             this.hideQueuePopup(true);
             if (err.name === 'AbortError' || !this.isStreaming) {
-                if (receivedRagMetadata) {
-                    this.mountRagMetadataCard(asstBubbleWrapper, contentEl, receivedRagMetadata);
-                }
                 if ((accumulatedContent.trim() || accumulatedReasoning.trim()) && !asstBubbleWrapper.dataset.rawContent) {
                     contentEl.innerHTML = this.renderAssistantMessage(accumulatedReasoning, accumulatedContent, false, this.thinkingDurationSeconds);
                     
@@ -3524,6 +3521,10 @@ const Chat = {
                     }
                     if (this.thinkingDurationSeconds) {
                         asstBubbleWrapper.dataset.thinkingDuration = this.thinkingDurationSeconds;
+                    }
+
+                    if (receivedRagMetadata) {
+                        this.mountRagMetadataCard(asstBubbleWrapper, contentEl, receivedRagMetadata);
                     }
 
                     this.highlightCode(contentEl);
@@ -3545,6 +3546,7 @@ const Chat = {
             this.activeBubbleWrapper = null;
             this.currentAccumulatedReasoning = '';
             this.currentAccumulatedContent = '';
+            this.currentRagMetadata = null;
             if (contentEl) {
                 this.enhanceTablesAndMeters(contentEl);
             }
