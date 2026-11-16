@@ -310,6 +310,8 @@ def migrate_schema():
                     conn.exec_driver_sql("ALTER TABLE chat_messages ADD COLUMN tokens INTEGER DEFAULT 0")
                 if "reasoning" not in msg_cols:
                     conn.exec_driver_sql("ALTER TABLE chat_messages ADD COLUMN reasoning TEXT")
+                if "rag_metadata" not in msg_cols:
+                    conn.exec_driver_sql("ALTER TABLE chat_messages ADD COLUMN rag_metadata TEXT")
         except Exception:
             pass
 
