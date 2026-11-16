@@ -81,6 +81,16 @@ class AttachmentProcessor:
                     current_block.append(norm_p)
                     current_tokens += t_count
 
+            # استخراج متون جدول‌های فایل Word با تضمین ساختار متنی
+            for table in doc.tables:
+                for row in table.rows:
+                    row_cells = [c.text.strip() for c in row.cells if c.text.strip()]
+                    if row_cells:
+                        row_line = " | ".join(row_cells)
+                        norm_row = normalize_persian_text(row_line)
+                        current_block.append(norm_row)
+                        current_tokens += estimate_persian_tokens(norm_row)
+
             if current_block:
                 sections_data.append({
                     "section_number": block_idx,
@@ -183,6 +193,36 @@ class AttachmentProcessor:
                     source_url=source_url
                 )
                 chunks.append(chunk)
+
+        elif suffix in [".txt", ".text"]:
+            try:
+                raw_txt = file_path.read_text(encoding="utf-8", errors="replace")
+                cleaned = normalize_persian_text(raw_txt)
+                tokens = estimate_persian_tokens(cleaned)
+                contextual_content = (
+                    f"سند: {doc_title}\n"
+                    f"پیوست متنی: {attachment_name}\n\n"
+                    f"متن پیوست:\n{cleaned}"
+                )
+                chunk = LegalChunk(
+                    chunk_id=str(uuid.uuid4()),
+                    document_source_id=rule_id,
+                    document_title=doc_title,
+                    document_type="پیوست متنی (UTF-8)",
+                    version_id=version_id if version_id else None,
+                    chapter=f"پیوست: {attachment_name}",
+                    article_number=extract_numeric_article(cleaned),
+                    paragraph_number="متن کامل",
+                    section_path=[doc_title, "پیوست‌های ابلاغ‌شده", attachment_name],
+                    content=cleaned,
+                    contextual_content=contextual_content,
+                    token_count=tokens,
+                    status=status,
+                    source_url=source_url
+                )
+                chunks.append(chunk)
+            except Exception as e:
+                logger.error("خطا در خواندن فایل متنی %s: %s", file_path.name, e)
 
         return chunks
 

@@ -5,6 +5,7 @@
 
 import re
 import html
+import unicodedata
 from typing import Optional
 
 
@@ -106,6 +107,9 @@ def normalize_persian_text(
     # ۱. ابتدا استخراج متن در صورت وجود تگ‌های HTML
     if "<" in text and ">" in text:
         text = clean_html(text)
+
+    # ۱.۵. یکدست‌سازی ساختار یونیکد (NFKC) برای تبدیل گلیف‌های متصل فونت‌های فارسی و کدهای نمایشی به کاراکترهای استاندارد فارسی UTF-8
+    text = unicodedata.normalize("NFKC", text)
 
     # ۲. استانداردسازی کاراکترهای عربی به فارسی
     chars = []
