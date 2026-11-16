@@ -80,6 +80,7 @@ class ChatMessage(Base):
     has_attachment = Column(Boolean, default=False)
     attachment_name = Column(String(255), nullable=True)
     tokens = Column(Integer, default=0)
+    rag_metadata = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True, nullable=False)
 
     session = relationship("ChatSession", back_populates="messages")

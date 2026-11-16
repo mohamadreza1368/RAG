@@ -28,7 +28,13 @@ class RegulatoryRAGEngine(BaseRAGEngine):
     enabled: bool = True
 
     def __init__(self, root_dir: Optional[Path] = None):
-        self.root_dir = root_dir or Path(__file__).resolve().parent.parent.parent
+        env_path = os.getenv("RAG_PROJECT_PATH")
+        if root_dir:
+            self.root_dir = Path(root_dir)
+        elif env_path and Path(env_path).exists():
+            self.root_dir = Path(env_path)
+        else:
+            self.root_dir = Path(__file__).resolve().parent.parent.parent
         self._retriever = None
         self._initialized = False
 
@@ -129,20 +135,26 @@ class RegulatoryRAGEngine(BaseRAGEngine):
                 warnings = []
                 context_blocks = []
                 for i, c in enumerate(chunks, 1):
-                    context_blocks.append(f"--- [مستند {i}] ---\n{c.get('header','')}\n{c.get('full_text','')}")
+                    t = c.get("document_title") or c.get("rule_title") or "مصوبه سازمان بورس"
+                    art = c.get("article_number")
+                    art_str = f"ماده {art}" if art else (c.get("paragraph_number") or c.get("chunk_type") or "متن مقرره")
+                    body = c.get("contextual_content") or c.get("content") or c.get("full_text") or ""
+                    context_blocks.append(f"--- [مستند شماره {i}: {t} | {art_str}] ---\n{body}")
                 rag_context = "\n\n".join(context_blocks)
 
             formatted_sources = []
             for c in chunks:
                 art = c.get("article_number")
-                art_str = f"ماده {art}" if art else (c.get("chunk_type") or "متن مقرره")
+                art_str = f"ماده {art}" if art else (c.get("paragraph_number") or c.get("chunk_type") or "متن مقرره")
                 sec_path = c.get("section_path")
                 sec_path_str = " > ".join(sec_path) if isinstance(sec_path, list) else str(sec_path or "")
-                score_val = c.get("score")
+                score_val = c.get("similarity_score", c.get("score"))
+                rule_t = c.get("document_title") or c.get("rule_title") or "مصوبه سازمان بورس و اوراق بهادار"
+                content_text = c.get("content") or c.get("contextual_content") or c.get("full_text") or ""
 
                 formatted_sources.append({
                     "chunk_id": c.get("chunk_id"),
-                    "rule_title": c.get("rule_title") or "مصوبه سازمان بورس و اوراق بهادار",
+                    "rule_title": rule_t,
                     "article": art_str,
                     "article_no": art,
                     "status": c.get("status") or "معتبر",
@@ -151,7 +163,7 @@ class RegulatoryRAGEngine(BaseRAGEngine):
                     "similarity_mode": active_mode,
                     "alpha": active_alpha,
                     "is_toc": c.get("is_toc", False),
-                    "snippet": (c.get("content") or c.get("full_text") or "")[:260] + "..."
+                    "snippet": content_text[:280] + "..." if len(content_text) > 280 else content_text
                 })
 
             return {

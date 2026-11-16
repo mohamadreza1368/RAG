@@ -2671,7 +2671,7 @@ const Chat = {
                 if (data.messages && data.messages.length > 0) {
                     if (welcomeScreen) welcomeScreen.classList.add('hidden');
                     data.messages.forEach(msg => {
-                        this.appendMessage(msg.role, msg.content, msg.has_attachment, msg.attachment_name, msg.reasoning);
+                        this.appendMessage(msg.role, msg.content, msg.has_attachment, msg.attachment_name, msg.reasoning, msg.rag_metadata);
                     });
                     this.scrollToBottom();
                 } else {
@@ -2831,7 +2831,7 @@ const Chat = {
         this.openDeleteModal(this.currentSessionId);
     },
 
-    appendMessage(role, content, hasAttachment = false, attachmentName = '', reasoning = null) {
+    appendMessage(role, content, hasAttachment = false, attachmentName = '', reasoning = null, ragMetadata = null) {
         const streamContainer = document.getElementById('chat-stream');
         const welcomeScreen = document.getElementById('welcome-screen');
         if (welcomeScreen) welcomeScreen.classList.add('hidden');
@@ -2883,6 +2883,16 @@ const Chat = {
         }
         msgDiv.innerHTML = renderedContent;
         streamContainer.appendChild(msgDiv);
+
+        if (!isUser && ragMetadata) {
+            try {
+                const meta = typeof ragMetadata === 'string' ? JSON.parse(ragMetadata) : ragMetadata;
+                const contentEl = msgDiv.querySelector('.prose') || msgDiv;
+                this.mountRagMetadataCard(msgDiv, contentEl, meta);
+            } catch(e) {
+                console.error("Error mounting ragMetadata:", e);
+            }
+        }
 
         this.highlightCode(msgDiv);
         this.enhanceTablesAndMeters(msgDiv);

@@ -174,6 +174,7 @@ def get_session_details(
             "role": m.role,
             "content": m.content,
             "reasoning": getattr(m, "reasoning", None),
+            "rag_metadata": getattr(m, "rag_metadata", None),
             "has_attachment": m.has_attachment,
             "attachment_name": m.attachment_name,
             "created_at": m.created_at.isoformat()
@@ -540,6 +541,7 @@ async def send_message(
                     role="assistant",
                     content=final_text,
                     reasoning=final_reasoning,
+                    rag_metadata=json.dumps(rag_metadata, ensure_ascii=False) if rag_metadata else None,
                     tokens=resp_tokens_est
                 )
                 bg_db.add(asst_msg)
