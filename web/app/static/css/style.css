@@ -1,0 +1,898 @@
+/* ============================================================
+   LOCAL VAZIRMATN FONT DEFINITIONS (100% Offline / Self-Hosted)
+   ============================================================ */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/static/fonts/Vazirmatn-Regular.woff2') format('woff2'),
+         url('/static/fonts/Vazirmatn-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/static/fonts/Vazirmatn-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/static/fonts/Vazirmatn-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/static/fonts/Vazirmatn-Bold.woff2') format('woff2'),
+         url('/static/fonts/Vazirmatn-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --bg-main: #ffffff;
+    --text-main: #1f2937;
+    --sidebar-bg: #f9fafb;
+}
+
+.dark {
+    --bg-main: #212121;
+    --text-main: #ececec;
+    --sidebar-bg: #171717;
+}
+
+body {
+    font-family: 'Vazirmatn', 'Vazir', 'Tahoma', 'Segoe UI', 'IranSans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+}
+
+button {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.35);
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.6);
+}
+
+.prose-custom {
+    line-height: 1.75;
+    font-size: 0.9rem;
+}
+.prose-custom p {
+    margin-bottom: 0.75rem;
+}
+.prose-custom p:last-child {
+    margin-bottom: 0;
+}
+
+/* Code Block & Wrapper Styling */
+.code-block-wrapper {
+    position: relative;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin: 1rem 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: #141414;
+    direction: ltr !important;
+    text-align: left !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #242424;
+    padding: 0.45rem 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    user-select: none;
+    direction: ltr !important;
+}
+
+.code-block-header .lang-tag {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: lowercase;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.copy-code-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Vazirmatn', sans-serif;
+    line-height: 1;
+}
+.copy-code-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.prose-custom pre {
+    background-color: #141414 !important;
+    border-radius: 0.75rem;
+    padding: 1rem !important;
+    margin: 0.85rem 0;
+    overflow-x: auto;
+    direction: ltr !important;
+    text-align: left !important;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.84rem;
+    line-height: 1.65;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* When wrapped inside .code-block-wrapper */
+.code-block-wrapper pre {
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+}
+
+/* Fallback if copy button is placed directly inside pre without header wrapper */
+.prose-custom pre:has(.copy-code-btn) {
+    padding-top: 2.85rem !important;
+}
+.prose-custom pre > .copy-code-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.6rem;
+    z-index: 10;
+}
+
+.prose-custom code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.82rem;
+    background: rgba(120, 120, 120, 0.15);
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.35rem;
+    direction: ltr !important;
+}
+
+.prose-custom pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.prose-custom ul {
+    list-style-type: disc;
+    padding-right: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+.prose-custom ol {
+    list-style-type: decimal;
+    padding-right: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+.prose-custom h1, .prose-custom h2, .prose-custom h3 {
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+.prose-custom h1 { font-size: 1.25rem; }
+.prose-custom h2 { font-size: 1.1rem; }
+.prose-custom h3 { font-size: 0.95rem; }
+
+[dir="rtl"] {
+    text-align: right;
+}
+[dir="ltr"] {
+    text-align: left;
+}
+
+/* Sidebar Smooth Collapse & Expand */
+#sidebar {
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease,
+                margin 0.25s ease;
+    will-change: width, opacity;
+}
+
+#sidebar.sidebar-collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+}
+
+/* ============================================================
+   SMART INTERACTIVE CHARTS & VISUAL DASHBOARD (Chart.js)
+   ============================================================ */
+.smart-chart-container {
+    direction: rtl;
+    text-align: right;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.07);
+    transition: all 0.25s ease;
+}
+.dark .smart-chart-container {
+    box-shadow: 0 6px 25px -2px rgba(0, 0, 0, 0.45);
+}
+.smart-chart-container:hover {
+    box-shadow: 0 8px 30px -4px rgba(16, 185, 129, 0.12);
+}
+.chart-type-btn {
+    user-select: none;
+    outline: none;
+}
+
+/* ============================================================
+   GRAPHIFY KNOWLEDGE GRAPH & NETWORK ENGINE (vis-network)
+   ============================================================ */
+.graphify-container {
+    direction: rtl;
+    text-align: right;
+    box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+.dark .graphify-container {
+    box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.55);
+}
+.graphify-container:hover {
+    box-shadow: 0 10px 35px -4px rgba(16, 185, 129, 0.16);
+}
+.graphify-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    background: radial-gradient(circle at center, rgba(16, 185, 129, 0.03) 0%, transparent 70%);
+}
+.dark .graphify-canvas-wrap {
+    background: radial-gradient(circle at center, rgba(16, 185, 129, 0.05) 0%, #151515 80%);
+}
+.graphify-canvas {
+    width: 100%;
+    height: 100%;
+    outline: none;
+}
+.graphify-inspector {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    scrollbar-width: thin;
+}
+.graphify-legend-chip {
+    transition: all 0.2s ease;
+    user-select: none;
+    cursor: pointer;
+}
+.graphify-legend-chip:hover {
+    transform: translateY(-1px) scale(1.03);
+}
+.graphify-legend-chip.active {
+    box-shadow: 0 0 0 2px currentColor;
+}
+.graphify-btn {
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.graphify-btn:hover {
+    transform: translateY(-1px);
+}
+.graphify-btn:active {
+    transform: translateY(0);
+}
+
+/* ============================================================
+   OFFICE DASHBOARD, METERS & VISUAL CHARTS (طراحی اداری نمودارها)
+   ============================================================ */
+.office-meter-card {
+    margin: 1.15rem 0;
+    border-radius: 1rem;
+    padding: 1.15rem;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 184, 166, 0.08) 100%);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    direction: rtl;
+    text-align: right;
+}
+.dark .office-meter-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(24, 24, 27, 0.75) 100%);
+    border-color: rgba(16, 185, 129, 0.22);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+.office-meter-card:hover {
+    border-color: rgba(16, 185, 129, 0.45);
+    box-shadow: 0 8px 25px -4px rgba(16, 185, 129, 0.15);
+}
+
+.office-meter-bar-track {
+    width: 100%;
+    height: 0.85rem;
+    background: rgba(156, 163, 175, 0.2);
+    border-radius: 9999px;
+    overflow: hidden;
+    padding: 2px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+}
+.dark .office-meter-bar-track {
+    background: rgba(60, 60, 60, 0.6);
+}
+
+.office-meter-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+.office-meter-bar-fill.warning {
+    background: linear-gradient(90deg, #f59e0b 0%, #eab308 100%);
+}
+.office-meter-bar-fill.danger {
+    background: linear-gradient(90deg, #ef4444 0%, #f43f5e 100%);
+}
+
+.office-meter-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+    animation: shimmer 2.5s infinite;
+    border-radius: 9999px;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+.status-badge-success {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.dark .status-badge-success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.status-badge-warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.dark .status-badge-warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.status-badge-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.dark .status-badge-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.status-badge-info {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0284c7;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}
+.dark .status-badge-info {
+    background: rgba(14, 165, 233, 0.2);
+    color: #38bdf8;
+    border-color: rgba(14, 165, 233, 0.35);
+}
+
+/* ============================================================
+   EXECUTIVE OFFICE TABLES (جداول اداری مدرن و استاندارد)
+   ============================================================ */
+.prose-custom table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.25rem 0;
+    border-radius: 0.85rem;
+    overflow: hidden;
+    border: 1px solid rgba(229, 231, 235, 1);
+    font-size: 0.84rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    direction: rtl;
+}
+.dark .prose-custom table {
+    border-color: rgba(60, 60, 60, 0.8);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    background-color: #1a1a1a;
+}
+
+.prose-custom thead {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid rgba(203, 213, 225, 0.8);
+}
+.dark .prose-custom thead {
+    background: linear-gradient(180deg, #282828 0%, #202020 100%);
+    border-bottom: 2px solid rgba(75, 85, 99, 0.5);
+}
+
+.prose-custom th {
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    color: #334155;
+    text-align: right;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    letter-spacing: 0.01em;
+}
+.dark .prose-custom th {
+    color: #e2e8f0;
+    border-bottom: 1px solid rgba(60, 60, 60, 0.8);
+}
+
+.prose-custom td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid rgba(241, 245, 249, 1);
+    color: #374151;
+    vertical-align: middle;
+    text-align: right;
+}
+.dark .prose-custom td {
+    border-bottom: 1px solid rgba(48, 48, 48, 0.7);
+    color: #cbd5e1;
+}
+
+.prose-custom tbody tr:nth-child(even) {
+    background-color: rgba(248, 250, 252, 0.7);
+}
+.dark .prose-custom tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.prose-custom tbody tr:hover {
+    background-color: rgba(16, 185, 129, 0.07) !important;
+}
+.dark .prose-custom tbody tr:hover {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+.prose-custom tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ============================================================
+   OFFICE FILE EXPORT & DOWNLOAD CARDS (کارت دانلود فایل اداری)
+   ============================================================ */
+.office-download-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 50%, rgba(20, 184, 166, 0.08) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 1rem;
+    transition: all 0.25s ease;
+}
+.dark .office-download-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.10) 50%, rgba(20, 184, 166, 0.10) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.office-download-card:hover {
+    box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.18);
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.msg-action-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(229, 231, 235, 0.6);
+}
+.dark .msg-action-bar {
+    border-top-color: rgba(60, 60, 60, 0.5);
+}
+
+.msg-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    transition: all 0.18s ease;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(120, 120, 120, 0.08);
+}
+.msg-action-btn:hover {
+    transform: translateY(-1px);
+}
+.msg-action-btn-copy {
+    color: #4b5563;
+}
+.dark .msg-action-btn-copy {
+    color: #9ca3af;
+}
+.msg-action-btn-copy:hover {
+    background: rgba(120, 120, 120, 0.18);
+    color: #111827;
+}
+.dark .msg-action-btn-copy:hover {
+    color: #f3f4f6;
+}
+
+.msg-action-btn-docx {
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+.dark .msg-action-btn-docx {
+    color: #60a5fa;
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.3);
+}
+.msg-action-btn-docx:hover {
+    background: rgba(37, 99, 235, 0.2);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.msg-action-btn-xlsx {
+    color: #059669;
+    background: rgba(5, 150, 105, 0.08);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+.dark .msg-action-btn-xlsx {
+    color: #34d399;
+    background: rgba(5, 150, 105, 0.15);
+    border-color: rgba(5, 150, 105, 0.3);
+}
+.msg-action-btn-xlsx:hover {
+    background: rgba(5, 150, 105, 0.2);
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+/* ============================================================
+   SEPARATED THINKING & RESULT UI STYLES
+   ============================================================ */
+.thinking-block-active {
+    animation: thinkingGlow 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes thinkingGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+    100% {
+        box-shadow: 0 0 14px 2px rgba(245, 158, 11, 0.22);
+        border-color: rgba(245, 158, 11, 0.5);
+    }
+}
+
+.thinking-block-completed summary {
+    list-style: none;
+}
+.thinking-block-completed summary::-webkit-details-marker {
+    display: none;
+}
+
+.thinking-body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+    overscroll-behavior: contain;
+}
+.thinking-body::-webkit-scrollbar {
+    width: 4px;
+}
+.thinking-body::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.35);
+    border-radius: 4px;
+}
+
+.result-section {
+    position: relative;
+}
+
+.result-section-header {
+    letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   PERSIAN INPUT DIRECTION & TYPOGRAPHY FIX
+   ============================================================ */
+#chat-input {
+    direction: rtl;
+    text-align: right;
+    unicode-bidi: plaintext;
+    font-feature-settings: "ss01" 1, "cv01" 1;
+}
+
+#chat-input[dir="ltr"] {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+#chat-input[dir="rtl"] {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* ============================================================
+   QUESTION TIMELINE NAVIGATOR (GEMINI / CHATGPT STYLE)
+   ============================================================ */
+#questions-nav-container {
+    opacity: 0.45;
+    transition: opacity 0.25s ease;
+}
+
+#questions-nav-container:hover {
+    opacity: 1;
+}
+
+#questions-nav-track {
+    max-height: 65vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 6px 3.5px;
+    border-radius: 9999px;
+    background-color: rgba(243, 244, 246, 0.4);
+    border: 1px solid rgba(209, 213, 219, 0.4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark #questions-nav-track {
+    background-color: rgba(28, 28, 30, 0.35);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+#questions-nav-track:hover {
+    padding: 7px 4.5px;
+    background-color: rgba(243, 244, 246, 0.85);
+    border-color: rgba(156, 163, 175, 0.45);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.dark #questions-nav-track:hover {
+    background-color: rgba(28, 28, 30, 0.85);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+#questions-nav-track::-webkit-scrollbar {
+    display: none;
+}
+
+.question-nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 14px;
+    padding: 0;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+    transition: width 0.2s ease, height 0.2s ease;
+}
+
+#questions-nav-track:hover .question-nav-item {
+    width: 24px;
+    height: 14px;
+}
+
+.question-nav-pill {
+    width: 7px;
+    height: 2.5px;
+    border-radius: 9999px;
+    background-color: rgba(156, 163, 175, 0.5);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .question-nav-pill {
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Hovering over track slightly widens all pills */
+#questions-nav-track:hover .question-nav-pill {
+    width: 10px;
+    background-color: rgba(156, 163, 175, 0.7);
+}
+
+.dark #questions-nav-track:hover .question-nav-pill {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Hovering over specific item enlarges that pill more */
+.question-nav-item:hover .question-nav-pill {
+    width: 16px !important;
+    background-color: #4b5563 !important;
+}
+
+.dark .question-nav-item:hover .question-nav-pill {
+    background-color: #f3f4f6 !important;
+}
+
+/* Active indicator: delicate, clean, blue */
+.question-nav-item.active .question-nav-pill {
+    width: 13px;
+    height: 2.5px;
+    background-color: #3b82f6 !important;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
+}
+
+#questions-nav-track:hover .question-nav-item.active .question-nav-pill {
+    width: 18px;
+}
+
+.question-nav-item.active:hover .question-nav-pill {
+    width: 20px !important;
+    background-color: #2563eb !important;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.7);
+}
+
+.question-nav-tooltip {
+    position: absolute;
+    right: 100%;
+    margin-right: 10px;
+    padding: 5px 10px;
+    background-color: rgba(17, 24, 39, 0.95);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    color: #f3f4f6;
+    border-radius: 9px;
+    font-size: 11px;
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(6px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    z-index: 60;
+}
+
+.dark .question-nav-tooltip {
+    background-color: rgba(26, 26, 26, 0.95);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.question-nav-item:hover .question-nav-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0) scale(1);
+}
+
+.user-message-highlight {
+    animation: userMsgPulse 1.6s ease-out;
+}
+
+@keyframes userMsgPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+        outline: 2px solid rgba(59, 130, 246, 0.8);
+    }
+    50% {
+        box-shadow: 0 0 18px 4px rgba(59, 130, 246, 0.4);
+        outline: 2px solid rgba(59, 130, 246, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent;
+        outline: 2px solid transparent;
+    }
+}
+
+/* ============================================================
+   SESSION ITEM & FLOATING ACTION POPOVER
+   ============================================================ */
+.session-item {
+    position: relative;
+    transition: all 0.15s ease-in-out;
+}
+
+.session-actions-popover {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.92);
+    transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    background: #ffffff;
+    border: 1px solid rgba(209, 213, 219, 0.9);
+    border-radius: 0.65rem;
+    padding: 2px 4px;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.12), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+}
+
+.dark .session-actions-popover {
+    background: #232326;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.session-item:hover .session-actions-popover,
+.session-item:focus-within .session-actions-popover,
+.session-item.has-active-actions .session-actions-popover {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: scale(1) !important;
+}
+
+.session-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 0.45rem;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.session-action-btn:hover {
+    transform: scale(1.1);
+}
+
+
+

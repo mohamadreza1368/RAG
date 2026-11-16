@@ -72,3 +72,34 @@ python run_graph.py --stats
 ```
 
 داشبورد تعاملی گراف در مسیر `data/graph/graph_explorer.html` با هر مرورگری قابل باز شدن و کاوش بصری است.
+
+---
+
+### ۴. ساخت ایندکس‌ها و جستجوی ترکیبی (فاز ۴ و ۵)
+```bash
+# چانک‌بندی بزرگ با پنجره لغزان و هم‌پوشانی:
+python run_preprocessor.py --chunk-size 900 --chunk-overlap 200
+
+# ساخت ایندکس‌های وکتوری (Qdrant) و واژگانی (BM25):
+python run_indexer.py
+
+# جستجوی هوشمند ترکیبی وزن‌دار (پیش‌فرض):
+python run_search.py -q "شرایط ثبت نهادهای مالی"
+
+# مقایسه رو در روی تمام معیارهای تشابه (Cosine, BM25, RRF, Hybrid Weighted):
+python run_search.py -q "شرایط ثبت نهادهای مالی" --compare
+```
+
+---
+
+### ۵. راه‌اندازی وب چت‌بات و سامانه یکپارچه (Web & Multi-RAG Ecosystem)
+```bash
+# نصب نیازمندی‌های کامل پلتفرم:
+pip install -r requirements.txt
+
+# اجرای سرور وب و وب‌سرویس یکپارچه:
+python run_server.py --host 0.0.0.0 --port 8000
+```
+* **آدرس رابط کاربری وب:** `http://127.0.0.1:8000`
+* **ورود مدیر:** `admin` / `admin123`
+* **معماری اکوسیستم چند-دامنه (`rag_ecosystem/`):** امکان ثبت و اتصال موتورهای RAG مختلف به رجیستری مرکزی با پیاده‌سازی کلاس `BaseRAGEngine`.

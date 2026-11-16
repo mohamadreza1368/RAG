@@ -27,4 +27,3 @@ models/
 *.bin
 *.safetensors
 *.log
-web/
