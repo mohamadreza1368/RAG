@@ -256,41 +256,66 @@ class AttachmentProcessor:
         # ترجیحاً PDF را به خاطر استناد دقیق شماره صفحه انتخاب می‌کنیم
         has_pdf = any((att.get("name") or "").lower().endswith(".pdf") for att in attachments)
 
+        # کش‌کردن فایل‌های موجود در دایرکتوری پیوست‌ها بر اساس شناسه (att_id)
+        # این کار از بروز خطای File name too long (Errno 36) در سیستم‌عامل‌های لینوکس به طور کامل جلوگیری می‌کند
+        existing_attachments_by_id = {}
+        if attachments_base_dir.exists():
+            try:
+                for entry in attachments_base_dir.iterdir():
+                    try:
+                        if entry.is_file():
+                            prefix = entry.name.split("_")[0]
+                            if prefix.isdigit():
+                                existing_attachments_by_id[int(prefix)] = entry
+                    except OSError:
+                        pass
+            except OSError as err:
+                logger.warning("خطا در پیمایش دایرکتوری پیوست‌ها: %s", err)
+
         for att in attachments:
-            att_name = att.get("name") or f"پیوست {att.get('id')}"
-            is_pdf = att_name.lower().endswith(".pdf")
-            is_docx = att_name.lower().endswith(".docx")
+            try:
+                att_id = att.get("id")
+                att_name = att.get("name") or f"پیوست {att_id}"
+                is_pdf = att_name.lower().endswith(".pdf")
+                is_docx = att_name.lower().endswith(".docx")
 
-            # اگر هر دو موجود باشد، جهت جلوگیری از افزونگی داده‌ها، نسخه دقیق‌تر PDF را پردازش می‌کنیم
-            if has_pdf and is_docx:
-                logger.info("پیوست Word %s به دلیل وجود نسخه PDF معادل نادیده گرفته شد.", att_name)
-                continue
+                # اگر هر دو موجود باشد، جهت جلوگیری از افزونگی داده‌ها، نسخه دقیق‌تر PDF را پردازش می‌کنیم
+                if has_pdf and is_docx:
+                    logger.info("پیوست Word %s به دلیل وجود نسخه PDF معادل نادیده گرفته شد.", att_name)
+                    continue
 
-            # پیدا کردن مسیر محلی فایل
-            local_path = None
-            if att.get("local_path"):
-                cand = Path(att["local_path"])
-                if cand.exists():
-                    local_path = cand
-                elif (attachments_base_dir / cand.name).exists():
-                    local_path = attachments_base_dir / cand.name
+                # پیدا کردن مسیر محلی فایل به روش کاملاً امن و ضد خطا در سیستم‌عامل‌های مختلف
+                local_path = None
+                if att_id is not None and int(att_id) in existing_attachments_by_id:
+                    local_path = existing_attachments_by_id[int(att_id)]
 
-            if not local_path:
-                # جستجو بر اساس شناسه یا نام فایل در پوشه attachments
-                for f in attachments_base_dir.glob(f"{att.get('id')}*"):
-                    local_path = f
-                    break
+                # در صورت عدم تطابق با شناسه عددی، بررسی با رعایت طول مجاز نام فایل در لینوکس
+                if not local_path and att.get("local_path"):
+                    norm_path_str = str(att["local_path"]).replace("\\", "/")
+                    cand = Path(norm_path_str)
+                    try:
+                        # بررسی سقف ۲۴۰ بایت قبل از صدا زدن تابع فایل‌سیستم
+                        if len(cand.name.encode("utf-8")) < 240 and cand.is_file():
+                            local_path = cand
+                        elif attachments_base_dir.exists():
+                            sub_cand = attachments_base_dir / cand.name
+                            if len(sub_cand.name.encode("utf-8")) < 240 and sub_cand.is_file():
+                                local_path = sub_cand
+                    except OSError:
+                        pass
 
-            if not local_path or not local_path.exists():
-                logger.warning("فایل فیزیکی پیوست %s یافت نشد.", att_name)
-                continue
+                if not local_path:
+                    logger.warning("فایل فیزیکی پیوست %s (شناسه %s) یافت نشد.", att_name, att_id)
+                    continue
 
-            att_chunks = self.process_attachment_file(
-                file_path=local_path,
-                attachment_name=att_name,
-                attachment_id=att.get("id"),
-                doc_metadata=doc_meta
-            )
-            all_chunks.extend(att_chunks)
+                att_chunks = self.process_attachment_file(
+                    file_path=local_path,
+                    attachment_name=att_name,
+                    attachment_id=att_id,
+                    doc_metadata=doc_meta
+                )
+                all_chunks.extend(att_chunks)
+            except Exception as err:
+                logger.error("خطا در پردازش پیوست %s از سند %s: %s", att.get("name"), rule_id, err)
 
         return all_chunks

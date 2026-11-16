@@ -272,9 +272,23 @@ class SeoRuleClient:
             logger.warning(f"محتوای فایلی برای پیوست {file_id} وجود ندارد.")
             return None
 
-        # پاکسازی نام فایل از کاراکترهای غیرمجاز در سیستم‌عامل
-        safe_filename = "".join(c for c in file_name if c not in r'\/:*?"<>|')
-        file_path = target_dir / f"{file_id}_{safe_filename}"
+        # پاکسازی نام فایل و کوتاه کردن آن جهت جلوگیری از خطای File name too long در لینوکس (حداکثر ۲۵۵ بایت)
+        safe_filename = "".join(c for c in file_name if c not in r'\/:*?"<>|').strip()
+        ext = ""
+        if "." in safe_filename:
+            base_name, ext = safe_filename.rsplit(".", 1)
+            ext = "." + ext
+        else:
+            base_name = safe_filename
+
+        # محاسبه حداکثر بایت مجاز برای نام (حداکثر ۱۸۰ بایت UTF-8)
+        prefix_bytes = len(f"{file_id}_".encode("utf-8"))
+        ext_bytes = len(ext.encode("utf-8"))
+        allowed_base_bytes = max(180 - prefix_bytes - ext_bytes, 20)
+        truncated_base = base_name.encode("utf-8")[:allowed_base_bytes].decode("utf-8", errors="ignore")
+        final_filename = f"{file_id}_{truncated_base}{ext}"
+
+        file_path = target_dir / final_filename
 
         try:
             binary_data = base64.b64decode(b64_content)
@@ -288,7 +302,7 @@ class SeoRuleClient:
                 fileGuid=file_guid,
                 name=file_name,
                 fileType=file_type,
-                local_path=str(file_path),
+                local_path=file_path.as_posix(),
                 file_size_bytes=len(binary_data)
             )
         except Exception as exc:
