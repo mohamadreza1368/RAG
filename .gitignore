@@ -27,3 +27,7 @@ models/
 *.bin
 *.safetensors
 *.log
+
+*.db
+*.sqlite
+*.sqlite3

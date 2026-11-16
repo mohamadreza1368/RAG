@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Date, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Date, Text, ForeignKey, Float
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from app.config import settings
 
@@ -120,6 +120,29 @@ class Skill(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+
+class RAGQueryFeedbackLog(Base):
+    __tablename__ = "rag_query_feedback_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    query_text = Column(Text, nullable=False)
+    message_id = Column(Integer, ForeignKey("chat_messages.id"), nullable=True, index=True)
+    session_id = Column(String(36), nullable=True, index=True)
+    engine_id = Column(String(50), default="regulatory", nullable=False)
+    retrieved_chunk_ids = Column(Text, nullable=False)  # JSON array of chunk_ids
+    feedback = Column(String(20), nullable=True)        # 'like', 'dislike', or None
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True, nullable=False)
+
+class RAGChunkFeedbackStat(Base):
+    __tablename__ = "rag_chunk_feedback_stats"
+
+    chunk_id = Column(String(100), primary_key=True, index=True)
+    rule_title = Column(String(255), nullable=True)
+    article_no = Column(String(50), nullable=True)
+    like_count = Column(Integer, default=0, nullable=False)
+    dislike_count = Column(Integer, default=0, nullable=False)
+    net_boost_score = Column(Float, default=0.0, nullable=False)
+    last_updated = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
 
 DEFAULT_SYSTEM_PROMPT = (
     "شما دستیار هوشمند، رسمی، دقیق و حرفه‌ای کارمندان و مدیران بورس کالای ایران (IME) هستید. "
@@ -342,6 +365,33 @@ def migrate_schema():
                     conn.exec_driver_sql("DROP TABLE api_keys")
                     conn.exec_driver_sql("ALTER TABLE api_keys_new RENAME TO api_keys")
                     break
+        except Exception:
+            pass
+
+        try:
+            conn.exec_driver_sql("""
+                CREATE TABLE IF NOT EXISTS rag_query_feedback_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    query_text TEXT NOT NULL,
+                    message_id INTEGER,
+                    session_id VARCHAR(36),
+                    engine_id VARCHAR(50) DEFAULT 'regulatory',
+                    retrieved_chunk_ids TEXT NOT NULL,
+                    feedback VARCHAR(20),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.exec_driver_sql("""
+                CREATE TABLE IF NOT EXISTS rag_chunk_feedback_stats (
+                    chunk_id VARCHAR(100) PRIMARY KEY,
+                    rule_title VARCHAR(255),
+                    article_no VARCHAR(50),
+                    like_count INTEGER DEFAULT 0,
+                    dislike_count INTEGER DEFAULT 0,
+                    net_boost_score REAL DEFAULT 0.0,
+                    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
         except Exception:
             pass
 

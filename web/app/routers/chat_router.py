@@ -568,6 +568,20 @@ async def send_message(
             bg_db.add(prompt_log)
             bg_db.commit()
 
+            if asst_msg_id and rag_metadata:
+                try:
+                    from app.rag_feedback_service import rag_feedback_service
+                    rag_feedback_service.record_retrieval(
+                        query=user_msg_content,
+                        message_id=asst_msg_id,
+                        session_id=sess.id,
+                        engine_id=rag_metadata.get("engine_id", "regulatory"),
+                        sources=rag_metadata.get("sources", []),
+                        db=bg_db
+                    )
+                except Exception as ex:
+                    logger.warning(f"Could not record RAG retrieval log: {ex}")
+
             # Trigger asynchronous background session summarization to maintain topic continuity
             asyncio.create_task(update_session_summary_background(sess.id, active_model))
 
@@ -734,9 +748,17 @@ def submit_message_feedback(
         msg.feedback_reason = body.reason
     db.commit()
 
+    chunk_stats = {}
+    try:
+        from app.rag_feedback_service import rag_feedback_service
+        chunk_stats = rag_feedback_service.apply_feedback(msg.id, clean_fb, db)
+    except Exception as ex:
+        logger.warning(f"Failed to apply feedback to chunk stats: {ex}")
+
     return {
         "status": "success",
         "message_id": msg.id,
         "feedback": msg.feedback,
-        "feedback_reason": msg.feedback_reason
+        "feedback_reason": msg.feedback_reason,
+        "chunk_feedback": chunk_stats
     }

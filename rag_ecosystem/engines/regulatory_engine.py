@@ -113,34 +113,83 @@ class RegulatoryRAGEngine(BaseRAGEngine):
 
         try:
             from search.graph_retriever import GraphAugmentedRetriever
+            candidate_k = max(top_k * 2, 8)
             if isinstance(self._retriever, GraphAugmentedRetriever):
                 res = self._retriever.retrieve(
                     query=query,
-                    top_k=top_k,
+                    top_k=candidate_k,
                     mode=active_mode,
                     alpha=active_alpha,
                     filter_toc=active_filter_toc
                 )
-                chunks = res.get("chunks", [])
+                raw_chunks = res.get("chunks", [])
                 warnings = res.get("warnings", [])
-                rag_context = res.get("rag_context", "")
             else:
-                chunks = self._retriever.search(
+                raw_chunks = self._retriever.search(
                     query=query,
-                    top_k=top_k,
+                    top_k=candidate_k,
                     mode=active_mode,
                     alpha=active_alpha,
                     filter_toc=active_filter_toc
                 )
                 warnings = []
-                context_blocks = []
-                for i, c in enumerate(chunks, 1):
-                    t = c.get("document_title") or c.get("rule_title") or "مصوبه سازمان بورس"
-                    art = c.get("article_number")
-                    art_str = f"ماده {art}" if art else (c.get("paragraph_number") or c.get("chunk_type") or "متن مقرره")
-                    body = c.get("contextual_content") or c.get("content") or c.get("full_text") or ""
-                    context_blocks.append(f"--- [مستند شماره {i}: {t} | {art_str}] ---\n{body}")
-                rag_context = "\n\n".join(context_blocks)
+
+            # 1. Fetch persistent chunk feedback boost scores from database
+            chunk_ids = [str(c.get("chunk_id")) for c in raw_chunks if c.get("chunk_id") is not None]
+            boost_map = {}
+            try:
+                from app.rag_feedback_service import rag_feedback_service
+                boost_map = rag_feedback_service.get_chunk_boost_map(chunk_ids)
+            except Exception as ex:
+                logger.debug(f"Could not load chunk boost scores: {ex}")
+
+            # 2. Apply persistent boost and re-rank candidate chunks
+            for c in raw_chunks:
+                cid = str(c.get("chunk_id"))
+                boost = float(boost_map.get(cid, 0.0))
+                base_s = float(c.get("similarity_score", c.get("score") or 0.0))
+                final_s = base_s + boost
+                c["base_score"] = base_s
+                c["feedback_boost"] = boost
+                c["final_score"] = final_s
+                c["similarity_score"] = final_s
+
+            # Re-sort chunks by final_score descending
+            raw_chunks.sort(key=lambda x: x.get("final_score", 0.0), reverse=True)
+            chunks = raw_chunks[:top_k]
+
+            # 3. Format complete Context string for LLM RAG
+            context_blocks = []
+            for i, chunk in enumerate(chunks, 1):
+                title = chunk.get("document_title") or chunk.get("rule_title") or "مصوبه سازمان بورس و اوراق بهادار"
+                art = chunk.get("article_number")
+                art_str = f"ماده {art}" if art else (chunk.get("paragraph_number") or chunk.get("chunk_type") or "متن مقرره")
+                sec_path = chunk.get("section_path")
+                sec_str = " > ".join(sec_path) if isinstance(sec_path, list) else str(sec_path or "")
+                status = chunk.get("status") or "معتبر"
+                text_body = chunk.get("contextual_content") or chunk.get("content") or chunk.get("full_text") or ""
+
+                block_lines = [
+                    f"--- [مستند شماره {i}: {title} | {art_str} (وضعیت: {status})] ---"
+                ]
+                if sec_str:
+                    block_lines.append(f"موقعیت سندی: {sec_str}")
+                block_lines.append(f"متن رسمی مقرره:\n{text_body}")
+
+                grel = chunk.get("graph_relations")
+                if grel:
+                    if grel.get("amended_by"):
+                        amended_str = ", ".join([x["title"] for x in grel["amended_by"]])
+                        block_lines.append(f"⚡ [وضعیت اصلاح]: این مصوبه طبق ({amended_str}) اصلاح شده است.")
+                    if grel.get("repealed_by"):
+                        repealed_str = ", ".join([x["title"] for x in grel["repealed_by"]])
+                        block_lines.append(f"⛔ [وضعیت اعتبار]: این مصوبه طبق ({repealed_str}) منسوخ شده است!")
+                context_blocks.append("\n".join(block_lines))
+
+            rag_context = "\n\n".join(context_blocks)
+            if warnings:
+                unique_warnings = list(dict.fromkeys(warnings))
+                rag_context = "### هشدارهای مهم گراف ارتباطات مصوبات:\n" + "\n".join(f"- {w}" for w in unique_warnings) + "\n\n" + rag_context
 
             formatted_sources = []
             for c in chunks:
@@ -148,7 +197,7 @@ class RegulatoryRAGEngine(BaseRAGEngine):
                 art_str = f"ماده {art}" if art else (c.get("paragraph_number") or c.get("chunk_type") or "متن مقرره")
                 sec_path = c.get("section_path")
                 sec_path_str = " > ".join(sec_path) if isinstance(sec_path, list) else str(sec_path or "")
-                score_val = c.get("similarity_score", c.get("score"))
+                score_val = c.get("final_score", c.get("similarity_score", c.get("score")))
                 rule_t = c.get("document_title") or c.get("rule_title") or "مصوبه سازمان بورس و اوراق بهادار"
                 content_text = c.get("content") or c.get("contextual_content") or c.get("full_text") or ""
 
@@ -160,6 +209,7 @@ class RegulatoryRAGEngine(BaseRAGEngine):
                     "status": c.get("status") or "معتبر",
                     "section_path": sec_path_str,
                     "score": round(score_val, 3) if score_val is not None else None,
+                    "feedback_boost": round(c.get("feedback_boost", 0.0), 3),
                     "similarity_mode": active_mode,
                     "alpha": active_alpha,
                     "is_toc": c.get("is_toc", False),
