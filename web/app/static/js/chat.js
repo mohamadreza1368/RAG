@@ -2005,9 +2005,6 @@ const Chat = {
                                 <i data-lucide="scale" class="w-3.5 h-3.5"></i>
                             </div>
                             <span class="font-bold">مستندات پایگاه: ${engineLabel}</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono">
-                                ${modeLabel}
-                            </span>
                             <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono">
                                 ${Chat.toPersianDigits(sources.length)} مرجع حقوقی
                             </span>
@@ -2024,14 +2021,9 @@ const Chat = {
                                         <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 inline-flex items-center justify-center text-[10px] shrink-0">${Chat.toPersianDigits(idx + 1)}</span>
                                         <span>${s.rule_title || 'مقرره بورسی'}</span>
                                     </span>
-                                    <div class="flex items-center gap-1.5">
-                                        ${s.score !== null && s.score !== undefined ? `
-                                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-mono font-bold" title="امتیاز مشابهت ترکیبی">${Math.round(s.score * 100)}٪ تطابق</span>
-                                        ` : ''}
-                                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-mono">
-                                            ${s.article_no ? `ماده ${Chat.toPersianDigits(s.article_no)}` : (s.article || s.section_path || 'بخش مقرره')}
-                                        </span>
-                                    </div>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-mono">
+                                        ${s.article_no ? `ماده ${Chat.toPersianDigits(s.article_no)}` : (s.article || s.section_path || 'بخش مقرره')}
+                                    </span>
                                 </div>
                                 ${s.section_path ? `
                                     <div class="text-[10px] text-gray-400 dark:text-gray-500 mb-1 truncate flex items-center gap-1" dir="rtl">
@@ -3566,46 +3558,12 @@ const Chat = {
             return true;
         }
 
+    isDownloadableContent(content, exportIntent = null) {
         return false;
     },
 
     buildMessageActionToolbar(content, exportIntent = null, hasTables = false) {
-        let downloadCardHtml = '';
-        const shouldShowDownloadCard = this.isDownloadableContent(content, exportIntent);
-
-        if (shouldShowDownloadCard) {
-            const subtitle = exportIntent === 'xlsx' 
-                ? 'فایل اکسل آماده دانلود و استفاده در نرم‌افزار Excel است.'
-                : (exportIntent === 'docx' 
-                    ? 'فایل ورد با فرمت‌بندی رسمی و تایپوگرافی سازمانی آماده دانلود است.'
-                    : 'فایل رسمی این گزارش با فرمت Word یا Excel آماده دانلود است.');
-            downloadCardHtml = `
-                <div class="office-download-card my-3 p-3 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 select-none">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                            <i data-lucide="file-down" class="w-4 h-4"></i>
-                        </span>
-                        <div>
-                            <div class="text-xs font-bold text-gray-800 dark:text-gray-100">فایل تحلیلی آماده دانلود است</div>
-                            <div class="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">${subtitle}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <button type="button" class="btn-direct-download-docx flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium shadow-sm transition cursor-pointer">
-                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                            <span>دانلود Word</span>
-                        </button>
-                        <button type="button" class="btn-direct-download-xlsx flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-sm transition cursor-pointer">
-                            <i data-lucide="sheet" class="w-3.5 h-3.5"></i>
-                            <span>دانلود Excel</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
         return `
-            ${downloadCardHtml}
             <div class="msg-action-bar">
                 <button type="button" class="msg-action-btn msg-action-btn-copy copy-msg-btn" title="کپی متن کامل">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
@@ -3621,6 +3579,7 @@ const Chat = {
                 </button>
             </div>
         `;
+    },
     },
 
     async downloadExport({ format, content = null, sessionId = null, messageId = null, title = null }) {
